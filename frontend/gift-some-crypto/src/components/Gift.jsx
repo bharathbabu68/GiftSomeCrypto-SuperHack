@@ -16,13 +16,15 @@ const Gift = () => {
 
 
     const [file, setFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null)
     const [giftCardRecipientAddress, setGiftCardRecipientAddress] = useState("")
     const [giftCardValue, setGiftCardValue] = useState("")
 
 
     const handleChange = (file) => {
         const imgUrl = URL.createObjectURL(file)
-        setFile(imgUrl);
+        setFile(file);
+        setImagePreview(imgUrl)
     };
  
     const web3Modal = new Web3Modal({
@@ -51,6 +53,33 @@ const Gift = () => {
     setAccountBalance(balanceinEtherFormatted)
     setConnectWalletStatus("Connected")
     console.log(account)
+  }
+
+  async function performMint(){
+    // First upload the image to IPFS
+    const formData = new FormData() 
+    formData.append("file", file) 
+    const response = await fetch(process.env.REACT_APP_IPFS_CLIENT_URL , { method: "POST", body: formData }) 
+    const responseJSON = await response.json() 
+    const imageHash = responseJSON.Hash
+    const imageUrl = process.env.REACT_APP_IPFS_GATEWAY_URL_FIRST_PART + "/ipfs/" + imageHash + process.env.REACT_APP_IPFS_GATEWAY_URL_SECOND_PART
+    console.log(imageUrl)
+    const nftMetadata = {
+        name: "Gift Some Crypto NFT",
+        description: "This is a NFT that can actually be redeemed for crypto",
+        image: imageUrl
+    }
+    const nftMetadataFile = new Blob([JSON.stringify(nftMetadata)])
+    const formDataJSON = new FormData() 
+    formDataJSON.append("file", nftMetadataFile)
+    const newResponse = await fetch(process.env.REACT_APP_IPFS_CLIENT_URL , { method: "POST", body: formDataJSON }) 
+    const newResponseJSON = await newResponse.json() 
+    const metadataHash = newResponseJSON.Hash
+    console.log(metadataHash)
+    const metaDataUrl = process.env.REACT_APP_IPFS_GATEWAY_URL_FIRST_PART + "/ipfs/" + metadataHash + process.env.REACT_APP_IPFS_GATEWAY_URL_SECOND_PART
+    console.log(metaDataUrl)
+
+
   }
 
   return (
@@ -87,11 +116,12 @@ const Gift = () => {
         <Form.Control onChange={(e)=>setGiftCardValue(e.target.value)} type="text" placeholder="0.1" />
         </Form.Group>
         </Form>
+        <Button onClick={performMint} variant="dark">Mint Gift Card</Button>
 
             </Col>
             <Col style={{textAlign:"right", padding:"3%", paddingTop:'0%'}} md={6}>
         <h5>Gift Card Preview</h5>
-          <img width="256" height="256" src={file}></img>
+          <img width="256" height="256" src={imagePreview}></img>
           <p style={{marginTop:"2%", fontSize:"0.8rem"}}>Recipient Address: {giftCardRecipientAddress}</p>
           <p style={{fontSize:"0.8rem"}}>Gift Card Value: {giftCardValue}</p>
             </Col>

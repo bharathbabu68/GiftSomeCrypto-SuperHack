@@ -26,7 +26,7 @@ const Home = () => {
                 </Col>
             </Row>
             <h5 style={{marginTop:"5%"}}>There isn't a better gift than crypto. </h5>
-            <Button variant="dark">Get Started</Button>{' '}
+            <Button href='/mint' variant="dark">Mint your first Gift Card</Button>{' '}
         </Container>
         
     </div>
