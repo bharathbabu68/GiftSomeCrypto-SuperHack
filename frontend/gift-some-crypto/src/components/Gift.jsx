@@ -158,11 +158,11 @@ const Gift = () => {
           <Form>
       <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
         <Form.Label>Enter receipient address to which you'd like to gift </Form.Label>
-        <Form.Control onChange={(e)=>setGiftCardRecipientAddress(e.target.value)} type="text" placeholder="0x80d87.......F84E181" />
+        <Form.Control onChange={(e)=>setGiftCardRecipientAddress(e.target.value)} type="text" placeholder="" />
         </Form.Group>
         <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
         <Form.Label>Enter gift card value in ETH </Form.Label>
-        <Form.Control onChange={(e)=>setGiftCardValue(e.target.value)} type="text" placeholder="0.1" />
+        <Form.Control onChange={(e)=>setGiftCardValue(e.target.value)} type="text" placeholder="" />
         </Form.Group>
         </Form>
         <Button onClick={performMint} variant="dark">Mint Gift Card</Button>
