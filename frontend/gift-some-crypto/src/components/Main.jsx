@@ -14,7 +14,6 @@ const Main = () => {
           <BrowserView>
             <Route path="/gift" exact component={Gift} />
             <Route path="/redeem" exact component={Redeem}/>
-            <Route path="/"  component={PageNotFound}/>  
             </BrowserView>        
           </Switch>
       </BrowserRouter>
