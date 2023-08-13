@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Container, Button, Row, Col, Form } from "react-bootstrap";
+import { Container, Button, Row, Col, Form, Modal, Spinner } from "react-bootstrap";
 import NavBar from "./NavBar";
 import Web3Modal from 'web3modal'
 import { ethers } from 'ethers'
 import { FileUploader } from "react-drag-drop-files";
+import {abi} from "../resources/abi"
 
 
 
@@ -13,6 +14,12 @@ const Gift = () => {
     const [connectWalletStatus, setConnectWalletStatus] = useState('Connect Wallet')
     const [accountTrimmed, setAccountTrimmed] = useState('')
     const [accountBalance, setAccountBalance] = useState('')
+    const [provider, setProvider] = useState()
+    const [signer, setSigner] = useState()
+    const [mintStatus, setMintStatus] = useState(false)
+    const [successModal, setSuccessModal] = useState(false)
+    const [mintTxHash, setMintTxHash] = useState()
+    const [explorerUrl, setExplorerUrl] = useState()
 
 
     const [file, setFile] = useState(null);
@@ -40,6 +47,8 @@ const Gift = () => {
     const connection = await web3Modal.connect()
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner()
+    setProvider(provider)
+    setSigner(signer)
     const account = await signer.getAddress()
     setAccount(account)
     var account_trimmed = account.substring(0, 4) + "..." + account.substring(account.length - 4, account.length)
@@ -56,7 +65,12 @@ const Gift = () => {
   }
 
   async function performMint(){
+    if(!signer){
+        alert("Please connect wallet and try again")
+        return
+    }
     // First upload the image to IPFS
+    setMintStatus(true)
     const formData = new FormData() 
     formData.append("file", file) 
     const response = await fetch(process.env.REACT_APP_IPFS_CLIENT_URL , { method: "POST", body: formData }) 
@@ -67,6 +81,7 @@ const Gift = () => {
     const nftMetadata = {
         name: "Gift Some Crypto NFT",
         description: "This is a NFT that can actually be redeemed for crypto",
+        value: `${giftCardValue} ETH`,
         image: imageUrl
     }
     const nftMetadataFile = new Blob([JSON.stringify(nftMetadata)])
@@ -78,12 +93,46 @@ const Gift = () => {
     console.log(metadataHash)
     const metaDataUrl = process.env.REACT_APP_IPFS_GATEWAY_URL_FIRST_PART + "/ipfs/" + metadataHash + process.env.REACT_APP_IPFS_GATEWAY_URL_SECOND_PART
     console.log(metaDataUrl)
+    const contract = new ethers.Contract(process.env.REACT_APP_GIFT_CARD_MANAGER_ADDRESS, abi, signer)
+    const valueInWei = ethers.utils.parseUnits(giftCardValue)
+    console.log(valueInWei)
+    const tx = await contract.issueGiftCard(giftCardRecipientAddress, metaDataUrl, {value: valueInWei})
 
+    await tx.wait()
+    setMintTxHash(tx.hash)
+    setExplorerUrl(`https://sepolia.explorer.mode.network/tx/${tx.hash}`)
+    setMintStatus(false)
+    setSuccessModal(true)
 
   }
 
   return (
     <>
+     <Modal centered show={mintStatus} onHide={()=>setMintStatus(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Minting your Gift Card, please confirm in Metamask</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+           <p> Uploading your gift card to IPFS and minting your NFT, hold on..</p>  
+           <Spinner animation="border" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </Spinner>
+        </Modal.Body>
+        <Modal.Footer>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal centered show={successModal} onHide={()=>setSuccessModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Successfully minted your gift card!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+           <p> Track your tx status in the <a href={explorerUrl}> block explorer</a></p>  
+        </Modal.Body>
+        <Modal.Footer>
+        </Modal.Footer>
+      </Modal>
+
       <div fluid className="home-page">
         <NavBar />
         <Container fluid style={{ marginTop: "2%", textAlign: "" }}>
